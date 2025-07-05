@@ -29,9 +29,11 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
 
   void _openEventForm({Event? event}) async {
     final updated = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => EventFormScreen(event: event)),
-    );
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EventFormScreen(event: event, mode: 'edit'),
+                            ),
+                          );
     if (updated == true) _loadEvents();
   }
 

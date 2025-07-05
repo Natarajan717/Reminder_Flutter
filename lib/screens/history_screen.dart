@@ -72,9 +72,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _openEditForm(Event event) async {
     final updated = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => EventFormScreen(event: event)),
-    );
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EventFormScreen(event: event, mode: 'reschedule'),
+                            ),
+                          );
     if (updated == true) _loadEvents();
   }
 

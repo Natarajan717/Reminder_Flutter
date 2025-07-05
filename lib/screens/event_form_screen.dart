@@ -4,8 +4,8 @@ import '../services/api_service.dart';
 
 class EventFormScreen extends StatefulWidget {
   final Event? event;
-
-  const EventFormScreen({super.key, this.event});
+  final String mode; // "new", "edit", or "reschedule"
+  const EventFormScreen({super.key, this.event, required this.mode});
 
   @override
   State<EventFormScreen> createState() => _EventFormScreenState();
@@ -70,7 +70,15 @@ class _EventFormScreenState extends State<EventFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.event == null ? 'New Event' : 'Edit Event')),
+      appBar: AppBar(
+        title: Text(
+          widget.mode == 'edit'
+              ? 'Edit Event'
+              : widget.mode == 'reschedule'
+                  ? 'Reschedule Event'
+                  : 'New Event',
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

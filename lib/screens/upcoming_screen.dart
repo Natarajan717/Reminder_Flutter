@@ -89,6 +89,10 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+       appBar: AppBar(
+              title: const Text('Upcoming Events'),
+              backgroundColor: Colors.purple, // or your theme color
+       ),
       body: RefreshIndicator(
         onRefresh: _loadEvents,
         child: ListView.builder(

@@ -47,12 +47,15 @@ class _EventFormScreenState extends State<EventFormScreen> {
         _eventTime!.minute,
       );
 
+    //  Convert local time to UTC
+    final utcDateTime = fullDate.toUtc();
+
       final newEvent = Event(
         id: widget.event?.id,
         title: _titleController.text,
         note: _descriptionController.text,
         email: _emailController.text,
-        eventTime: fullDate,
+        eventTime: utcDateTime,
         remindBeforeMinutes: _remindBefore,
         repeatAfterMinutes: _repeatInterval,
       );

@@ -85,6 +85,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("History"),
+        backgroundColor: Colors.purple,
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),

@@ -5,7 +5,7 @@ import '../models/event.dart';
 import '../models/completion_type.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8080/api/events';
+  static const String baseUrl = 'https://reminder-backend-rm7x.onrender.com/api/events';
 
   Future<List<Event>> getUpcomingEvents() async {
     final response = await http.get(Uri.parse('$baseUrl/upcoming'));

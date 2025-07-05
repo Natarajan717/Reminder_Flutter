@@ -24,7 +24,7 @@ class Event {
       id: json['id'],
       title: json['title'],
       email: json['email'],
-      eventTime: DateTime.parse(json['eventTime']),
+      eventTime: DateTime.parse(json['eventTime'] + 'Z').toLocal(),
       remindBeforeMinutes: json['remindBeforeMinutes'],
       repeatAfterMinutes: json['repeatAfterMinutes'],
       note: json['note'],

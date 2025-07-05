@@ -36,7 +36,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                           );
     if (updated == true) _loadEvents();
   }
-
+// not used
   Future<void> _markAsCompleted(Event event) async {
     await _apiService.markEventCompleted(
       event.id!,
@@ -44,6 +44,46 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
       "Completed early",
     );
     _loadEvents();
+  }
+
+ Future<void> _markTypeAndNote(Event event) async {
+    final selectedType = await showDialog<CompletionType>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Mark Event Type'),
+        children: CompletionType.values.map((type) {
+          return SimpleDialogOption(
+            child: Text(type.name),
+            onPressed: () => Navigator.pop(context, type),
+          );
+        }).toList(),
+      ),
+    );
+
+    if (selectedType != null) {
+      final controller = TextEditingController();
+      final note = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Add Note'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'What happened?'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Save'),
+            )
+          ],
+        ),
+      );
+
+      if (note != null) {
+        await _apiService.markEventCompleted(event.id!, selectedType, note);
+        _loadEvents();
+      }
+    }
   }
 
   @override
@@ -76,7 +116,7 @@ class _UpcomingScreenState extends State<UpcomingScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.check_circle, color: Colors.green),
-                      onPressed: () => _markAsCompleted(event),
+                      onPressed: () => _markTypeAndNote(event),
                     ),
                   ],
                 ),

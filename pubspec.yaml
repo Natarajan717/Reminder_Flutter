@@ -1,0 +1,16 @@
+name: event_reminder_flutter
+description: A Flutter app to manage and track scheduled events with reminders.
+
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^0.13.6
+  intl: ^0.18.1
+
+flutter:
+  uses-material-design: true

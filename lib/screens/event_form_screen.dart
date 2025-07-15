@@ -105,10 +105,18 @@ class _EventFormScreenState extends State<EventFormScreen> {
                 title: const Text('Date'),
                 subtitle: Text(_eventDate != null ? _eventDate!.toLocal().toString().split(' ')[0] : 'Select date'),
                 onTap: () async {
+                  final now = DateTime.now();
+                  final initialDate = _eventDate != null && _eventDate!.isAfter(now) ? _eventDate! : now;
+                  final firstDate = widget.mode == 'reschedule' && _eventDate != null
+                      ? _eventDate!.isBefore(now)
+                      ? _eventDate!
+                      : now
+                      : now;
+
                   final date = await showDatePicker(
                     context: context,
-                    initialDate: _eventDate ?? DateTime.now(),
-                    firstDate: DateTime.now(),
+                    initialDate: initialDate,
+                    firstDate: firstDate,
                     lastDate: DateTime(2100),
                   );
                   if (date != null) setState(() => _eventDate = date);

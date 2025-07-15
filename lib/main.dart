@@ -1,3 +1,4 @@
+import 'package:event_reminder_flutter/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 
@@ -18,7 +19,7 @@ class EventReminderApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomeScreen(),
+        '/': (context) => const LoginScreen(),
       },
     );
   }

@@ -34,6 +34,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final selectedType = await showDialog<CompletionType>(
       context: context,
       builder: (context) => SimpleDialog(
+
         title: const Text('Mark Event Type'),
         children: CompletionType.values.map((type) {
           return SimpleDialogOption(

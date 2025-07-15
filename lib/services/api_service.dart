@@ -1,14 +1,65 @@
 // File: lib/services/api_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/event.dart';
 import '../models/completion_type.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://reminder-backend-rm7x.onrender.com/api/events';
+  static const String baseUrl = 'http://10.0.2.2:8082/api/events';
+  static const String authBaseUrl = 'http://10.0.2.2:8082';
+
+  // Future<bool> register(String name, String email, String password) async {
+  //   final response = await http.post(
+  //     Uri.parse("$authBaseUrl/auth/register"),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: jsonEncode({"name": name, "email": email, "password": password}),
+  //   );
+  //   return response.statusCode == 201;
+  // }
+
+  Future<bool> register(String name, String email, String password) async {
+    final url = Uri.parse("$authBaseUrl/auth/register");
+    final body = jsonEncode({"name": name, "email": email, "password": password});
+    final headers = {"Content-Type": "application/json"};
+
+    print("🔸 Register API Called");
+    print("➡️ URL: $url");
+    print("➡️ Body: $body");
+    print("➡️ Headers: $headers");
+
+    final response = await http.post(url, headers: headers, body: body);
+
+    print("⬅️ Status Code: ${response.statusCode}");
+    print("⬅️ Response Body: ${response.body}");
+
+    return response.statusCode == 201;
+  }
+
+  Future<String?> login(String email, String password) async {
+    final response = await http.post(
+      Uri.parse("$authBaseUrl/auth/login"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"username": email, "password": password}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['token'];
+    }
+    return null;
+  }
+
+  Future<Map<String, String>> _authHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("jwt_token");
+    return {
+      "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token"
+    };
+  }
 
   Future<List<Event>> getUpcomingEvents() async {
-    final response = await http.get(Uri.parse('$baseUrl/upcoming'));
+    final response = await http.get(Uri.parse('$baseUrl/upcoming'), headers: await _authHeaders());
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((json) => Event.fromJson(json)).toList();
@@ -18,7 +69,7 @@ class ApiService {
   }
 
   Future<List<Event>> getCompletedEvents() async {
-    final response = await http.get(Uri.parse('$baseUrl/history'));
+    final response = await http.get(Uri.parse('$baseUrl/history'), headers: await _authHeaders());
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((json) => Event.fromJson(json)).toList();
@@ -28,7 +79,7 @@ class ApiService {
   }
 
   Future<List<Event>> getEventsByType(CompletionType type) async {
-    final response = await http.get(Uri.parse('$baseUrl/history?type=${type.name}'));
+    final response = await http.get(Uri.parse('$baseUrl/history?type=${type.name}'), headers: await _authHeaders());
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((json) => Event.fromJson(json)).toList();
@@ -40,7 +91,7 @@ class ApiService {
   Future<void> createEvent(Event event) async {
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _authHeaders(),
       body: json.encode(event.toJson()),
     );
     if (response.statusCode != 201) {
@@ -51,7 +102,7 @@ class ApiService {
   Future<void> updateEvent(int id, Event event) async {
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _authHeaders(),
       body: json.encode(event.toJson()),
     );
     if (response.statusCode != 200) {
@@ -60,7 +111,7 @@ class ApiService {
   }
 
   Future<void> deleteEvent(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+    final response = await http.delete(Uri.parse('$baseUrl/$id'), headers: await _authHeaders());
     if (response.statusCode != 204) {
       throw Exception('Failed to delete event');
     }
@@ -69,7 +120,7 @@ class ApiService {
   Future<void> markEventCompleted(int id, CompletionType type, String note) async {
     final response = await http.post(
       Uri.parse('$baseUrl/$id/complete'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _authHeaders(),
       body: json.encode({
         'completionType': type.name,
         'note': note,

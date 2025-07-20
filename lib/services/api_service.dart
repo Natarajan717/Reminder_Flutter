@@ -75,10 +75,7 @@ class ApiService {
     if (accessToken != null) {
       await http.post(
         Uri.parse("$baseUrl/fcm-token"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $accessToken",
-        },
+        headers: await _authHeaders(),
         body: jsonEncode({"fcmToken": fcm_token}),
       );
     }

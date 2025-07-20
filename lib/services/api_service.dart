@@ -6,8 +6,8 @@ import '../models/event.dart';
 import '../models/completion_type.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8082/api/events';
-  static const String authBaseUrl = 'http://10.0.2.2:8082';
+  static const String baseUrl = 'https://reminder-backend-rm7x.onrender.com/api/events';
+  static const String authBaseUrl = 'https://reminder-backend-rm7x.onrender.com';
 
   // Future<bool> register(String name, String email, String password) async {
   //   final response = await http.post(
@@ -36,7 +36,21 @@ class ApiService {
     return response.statusCode == 201;
   }
 
-  Future<String?> login(String email, String password) async {
+  // Future<String?> login(String email, String password) async {
+  //   final response = await http.post(
+  //     Uri.parse("$authBaseUrl/auth/login"),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: jsonEncode({"username": email, "password": password}),
+  //   );
+  //
+  //   if (response.statusCode == 200) {
+  //     return jsonDecode(response.body)['token'];
+  //   }
+  //   return null;
+  // }
+
+  // ✅ STEP 1: Update login() to store both tokens
+  Future<bool> login(String email, String password) async {
     final response = await http.post(
       Uri.parse("$authBaseUrl/auth/login"),
       headers: {"Content-Type": "application/json"},
@@ -44,14 +58,87 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body)['token'];
+      final data = jsonDecode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("access_token", data['accessToken']);
+      await prefs.setString("refresh_token", data['refreshToken']);
+      await prefs.setString("email", email);
+      return true;
     }
+    return false;
+  }
+
+  Future<void> sendFcmTokenToBackend(String fcm_token) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accessToken = prefs.getString("access_token");
+
+    if (accessToken != null) {
+      await http.post(
+        Uri.parse("$baseUrl/fcm-token"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $accessToken",
+        },
+        body: jsonEncode({"fcmToken": fcm_token}),
+      );
+    }
+  }
+
+  // Future<Map<String, String>> _authHeaders() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final token = prefs.getString("jwt_token");
+  //   return {
+  //     "Content-Type": "application/json",
+  //     if (token != null) "Authorization": "Bearer $token"
+  //   };
+  // }
+
+  // ✅ STEP 2: Add token refresh logic
+  Future<String?> refreshAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final refreshToken = prefs.getString('refresh_token');
+    if (refreshToken == null) return null;
+
+    final response = await http.post(
+      Uri.parse("$authBaseUrl/auth/refresh-token"),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: jsonEncode({"fcmToken": refreshToken}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final newAccessToken = data['accessToken'];
+      await prefs.setString("access_token", newAccessToken);
+      return newAccessToken;
+    }
+
     return null;
   }
 
+// ✅ STEP 3: Decode JWT and refresh if needed
   Future<Map<String, String>> _authHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("jwt_token");
+    String? token = prefs.getString("access_token");
+
+    if (token != null) {
+      try {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          final payload = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+          final expiry = payload['exp'] * 1000;
+          final now = DateTime.now().millisecondsSinceEpoch;
+
+          if (expiry < now) {
+            token = await refreshAccessToken();
+          }
+        }
+      } catch (_) {
+        token = await refreshAccessToken();
+      }
+    }
+
     return {
       "Content-Type": "application/json",
       if (token != null) "Authorization": "Bearer $token"

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:event_reminder_flutter/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,20 +17,34 @@ class _LoginScreenState extends State<LoginScreen> {
   String? error;
 
   void _login() async {
-    final token = await ApiService().login(_emailController.text, _passwordController.text);
-    if (token != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("jwt_token", token);
-      if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+    final success = await ApiService().login(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (success) {
+      await setupFCM(); // 📌 Send token to backend
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     } else {
-      setState(() => error = "Invalid credentials");
+      setState(() => error = "Login failed. Check your credentials.");
     }
   }
 
-  void _goToRegister() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+  Future<void> setupFCM() async {
+    final prefs = await SharedPreferences.getInstance();
+    final fcm_token = prefs.getString("fcm_token");
+    final access_token = prefs.getString("access_token");
+    print("🔥 FCM Token: $fcm_token");
+    print("🔥 access Token: $access_token");
+
+    if (fcm_token != null) {
+      await ApiService().sendFcmTokenToBackend(fcm_token);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +58,16 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(controller: _passwordController, decoration: const InputDecoration(labelText: "Password"), obscureText: true),
             const SizedBox(height: 20),
             ElevatedButton(onPressed: _login, child: const Text("Login")),
-            TextButton(onPressed: _goToRegister, child: const Text("Create an account")),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                );
+              },
+              child: const Text("Don't have an account? Register"),
+            ),
             if (error != null) Text(error!, style: const TextStyle(color: Colors.red)),
           ],
         ),

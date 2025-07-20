@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/event.dart';
 import '../services/api_service.dart';
 
@@ -16,7 +17,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
   final _apiService = ApiService();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
-  late TextEditingController _emailController;
+  bool _sendEmailReminder = false;
   DateTime? _eventDate;
   TimeOfDay? _eventTime;
   int _remindBefore = 10;
@@ -28,7 +29,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     final e = widget.event;
     _titleController = TextEditingController(text: e?.title);
     _descriptionController = TextEditingController(text: e?.note);
-    _emailController = TextEditingController(text: e?.email ?? '');
+    _sendEmailReminder = false; // or default to false
     if (e != null) {
       _eventDate = e.eventTime;
       _eventTime = TimeOfDay.fromDateTime(e.eventTime);
@@ -50,11 +51,16 @@ class _EventFormScreenState extends State<EventFormScreen> {
     //  Convert local time to UTC
     final utcDateTime = fullDate.toUtc();
 
+    var email = null;
+      if(_sendEmailReminder) {
+        final prefs = await SharedPreferences.getInstance();
+         email = prefs.getString("email");
+      }
       final newEvent = Event(
         id: widget.event?.id,
         title: _titleController.text,
         note: _descriptionController.text,
-        email: _emailController.text,
+        email: email,
         eventTime: utcDateTime,
         remindBeforeMinutes: _remindBefore,
         repeatAfterMinutes: _repeatInterval,
@@ -97,9 +103,10 @@ class _EventFormScreenState extends State<EventFormScreen> {
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'note'),
               ),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+              CheckboxListTile(
+                title: const Text('Send Email Reminder'),
+                value: _sendEmailReminder,
+                onChanged: (val) => setState(() => _sendEmailReminder = val ?? false),
               ),
               ListTile(
                 title: const Text('Date'),
